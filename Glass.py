@@ -45,11 +45,15 @@ class Glass(object):
         return f"<{self.catalog} {self.name}>"
 
     def getNatRefTemp(self, wl):
-        if self.dispersionFormulaIdx is None or self.dispersionFormulaIdx == 0:
+        if self.dispersionFormulaIdx is None:
             self.logger.error("No dispersion formula.")
             return None
         c = self.coeffs
         wl = np.array(wl, dtype='double')
+
+        if self.dispersionFormulaIdx == 0:
+            #Use 0 to indicate constant n
+            return self.Nd587
         if self.dispersionFormulaIdx == 1:
             #Schott
             return np.sqrt( c[0] + (c[1]*(wl**2)) + (c[2]*np.power(wl, -2)) + (c[3]*np.power(wl, -4)) + (c[4]*np.power(wl, -6)) + (c[5]*np.power(wl, -8)) )
