@@ -1,10 +1,12 @@
 import logging
 import os
+import numpy as np
 
 class Glass(object):
     def __init__(self, catalog, name):
         self.catalog = catalog
         self.name = name
+        self.logger = logging.getLogger(self.name)
 
         #NM items
         self.dispersionFormulaIdx = None
@@ -41,6 +43,41 @@ class Glass(object):
 
     def __str__(self):
         return f"<{self.catalog} {self.name}>"
+
+    def getNatRefTemp(self, wl):
+        if self.dispersionFormulaIdx is None or self.dispersionFormulaIdx == 0:
+            self.logger.error("No dispersion formula.")
+            return None
+        c = self.coeffs
+        wl = np.array(wl, dtype='double')
+        if self.dispersionFormulaIdx == 1:
+            #Schott
+            return np.sqrt( c[0] + (c[1]*(wl**2)) + (c[2]*np.power(wl, -2)) + (c[3]*np.power(wl, -4)) + (c[4]*np.power(wl, -6)) + (c[5]*np.power(wl, -8)) )
+        elif self.dispersionFormulaIdx == 2:
+            #Sellmeier 1
+            return np.sqrt( 1. + ((c[0]*np.power(wl, 2))/(np.power(wl, 2)-c[1])) + ((c[2]*np.power(wl, 2))/(np.power(wl, 2)-c[3])) + ((c[4]*np.power(wl, 2))/(np.power(wl, 2)-c[5])) )
+        elif self.dispersionFormulaIdx == 3:
+            #Herzberger
+            L = 1./(np.power(wl, 2) - 0.028)
+            return c[0] + c[1]*L + c[2]*(L**2) + c[3]*(wl**2) + c[4]*np.power(wl, 4) + c[5]*np.power(wl, 6)
+        elif self.dispersionFormulaIndex == 4:
+            self.logger.error("Sellmeier2 not implemented")
+        elif self.dispersionFormulaIndex == 5:
+            self.logger.error("Conrady not implemented")
+        elif self.dispersionFormulaIndex == 6:
+            self.logger.error("Sellmeier3 not implemented")
+        elif self.dispersionFormulaIndex == 7:
+            self.logger.error("HoO1 not implemented")
+        elif self.dispersionFormulaIndex == 8:
+            self.logger.error("HoO2 not implemented")
+        elif self.dispersionFormulaIndex == 9:
+            self.logger.error("Sellmeier4 not implemented")
+        elif self.dispersionFormulaIndex == 10:
+            self.logger.error("Extended not implemented")
+        elif self.dispersionFormulaIndex == 11:
+            self.logger.error("Sellmeier5 not implemented")
+        elif self.dispersionFormulaIndex == 12:
+            self.logger.error("Extended2 not implemented")
 
 def _parseNumberWithQuirks(string):
     if string == '':
@@ -91,7 +128,7 @@ def parseAGF(agfPath, logLevel=logging.DEBUG):
                 logger.info(f"New glass: {name}")
 
                 dispFuncNo = int(chunks[1])
-                thisGlass.dispersionFunctionIndex = dispFuncNo
+                thisGlass.dispersionFormulaIdx = dispFuncNo
 
                 #Ignore Mil #
 
@@ -194,3 +231,5 @@ if __name__ == "__main__":
     glasses = parseAGF('./data/Zemax/schott.agf', logLevel=logging.INFO)
     bk7 = getGlassFromCatalog(glasses, 'N-BK7')
     print(bk7)
+    for glass in glasses:
+        print(glass.getNatRefTemp([1.550, 1.0]))
