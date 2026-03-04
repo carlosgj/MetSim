@@ -79,6 +79,19 @@ class Glass(object):
         elif self.dispersionFormulaIndex == 12:
             self.logger.error("Extended2 not implemented")
 
+
+    def getN(self, wl, T):
+        wl = np.array(wl, dtype='double')
+        T = np.array(T, dtype='double')
+
+        T0 = self.refTemp
+        delT = T - T0
+
+        n0 = self.getNatRefTemp(wl)
+        dndt = (n0**2)/(2*n0) * ( self.D0 + 2.*self.D1*delT + 3.*self.D2*delT**2 + (self.E0 + 2.*self.E1*delT)/(wl**2 - self.Ltk**2) )
+
+        return n0 + dndt*delT
+
 def _parseNumberWithQuirks(string):
     if string == '':
         return None
@@ -230,6 +243,10 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     glasses = parseAGF('./data/Zemax/schott.agf', logLevel=logging.INFO)
     bk7 = getGlassFromCatalog(glasses, 'N-BK7')
-    print(bk7)
-    for glass in glasses:
-        print(glass.getNatRefTemp([1.550, 1.0]))
+    print(bk7.getNatRefTemp([1.0, 1.550]))
+    print(bk7.getN(1.0, 20))
+    print(bk7.getN([1.0, 1.550], 20))
+    print(bk7.getN([1.0, 1.550], 25))
+
+    print(bk7.getN([1.0, 1.550], np.array([[20, 25]]).T))
+
