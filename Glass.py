@@ -88,11 +88,21 @@ class Glass(object):
         wl = np.array(wl, dtype='double')
         T = np.array(T, dtype='double')
 
-        T0 = self.refTemp
-        delT = T - T0
-
         n0 = self.getNatRefTemp(wl)
+
+        T0 = self.refTemp
+        if T0 is None:
+            delT = 0.
+            self.logger.warning("No reference temperature; will use unadjusted n")
+            return n0
+        else:
+            delT = T - T0
+
         dndt = (n0**2)/(2*n0) * ( self.D0 + 2.*self.D1*delT + 3.*self.D2*delT**2 + (self.E0 + 2.*self.E1*delT)/(wl**2 - self.Ltk**2) )
+
+        if self.D0 == 0 and self.D1 == 0 and self.D2 == 0:
+            self.logger.warning("Thermal coefficients are zero. Not trustworthy. Will return None.")
+            return None
 
         return n0 + dndt*delT
 
