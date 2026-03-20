@@ -64,23 +64,23 @@ class Glass(object):
             #Herzberger
             L = 1./(np.power(wl, 2) - 0.028)
             return c[0] + c[1]*L + c[2]*(L**2) + c[3]*(wl**2) + c[4]*np.power(wl, 4) + c[5]*np.power(wl, 6)
-        elif self.dispersionFormulaIndex == 4:
+        elif self.dispersionFormulaIdx == 4:
             self.logger.error("Sellmeier2 not implemented")
-        elif self.dispersionFormulaIndex == 5:
+        elif self.dispersionFormulaIdx == 5:
             self.logger.error("Conrady not implemented")
-        elif self.dispersionFormulaIndex == 6:
+        elif self.dispersionFormulaIdx == 6:
             self.logger.error("Sellmeier3 not implemented")
-        elif self.dispersionFormulaIndex == 7:
+        elif self.dispersionFormulaIdx == 7:
             self.logger.error("HoO1 not implemented")
-        elif self.dispersionFormulaIndex == 8:
+        elif self.dispersionFormulaIdx == 8:
             self.logger.error("HoO2 not implemented")
-        elif self.dispersionFormulaIndex == 9:
+        elif self.dispersionFormulaIdx == 9:
             self.logger.error("Sellmeier4 not implemented")
-        elif self.dispersionFormulaIndex == 10:
+        elif self.dispersionFormulaIdx == 10:
             self.logger.error("Extended not implemented")
-        elif self.dispersionFormulaIndex == 11:
+        elif self.dispersionFormulaIdx == 11:
             self.logger.error("Sellmeier5 not implemented")
-        elif self.dispersionFormulaIndex == 12:
+        elif self.dispersionFormulaIdx == 12:
             self.logger.error("Extended2 not implemented")
 
 
@@ -195,7 +195,11 @@ def parseAGF(agfPath, logLevel=logging.DEBUG):
 
                 thisGlass.density = float(chunks[2])
                 thisGlass.dPgF = float(chunks[3])
-                thisGlass.ignoreTCE = bool(int(chunks[4]))
+                if len(chunks) > 4:
+                    thisGlass.ignoreTCE = bool(int(chunks[4]))
+                else:
+                    logger.warning(f"{name} does not specify ignoreTCE; will assume False")
+                    thisGlass.ignoreTCE = False
 
             elif recType == 'CD':
                 chunks = lineData.split(' ')
@@ -219,7 +223,7 @@ def parseAGF(agfPath, logLevel=logging.DEBUG):
                 thisGlass.phosRes = vals[5]
 
             elif recType == 'LD':
-                chunks = lineData.split(' ')
+                chunks = lineData.split()
                 limits = [float(x) for x in chunks]
                 thisGlass.dispersionLimits = limits
 
@@ -230,7 +234,7 @@ def parseAGF(agfPath, logLevel=logging.DEBUG):
                 if lineData == '':
                     logger.warning(f"No thermal data for {name}")
                     continue
-                chunks = lineData.split(' ')
+                chunks = lineData.split()
                 vals = [float(x) for x in chunks]
                 thisGlass.D0 = vals[0]
                 thisGlass.D1 = vals[1]
@@ -252,6 +256,14 @@ def parseAGF(agfPath, logLevel=logging.DEBUG):
 
     return glasses
 
+def loadAllGlass(dirPath, logLevel=logging.DEBUG):
+    glasses = []
+    fnames = os.listdir(dirPath)
+    for fname in fnames:
+        if fname.endswith('.agf'):
+            fpath = os.path.join(dirPath, fname)
+            glasses.extend(parseAGF(fpath, logLevel=logLevel))
+    return glasses
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
