@@ -50,36 +50,43 @@ class Glass(object):
             return None
         c = self.coeffs
         wl = np.array(wl, dtype='double')
+        wl2 = wl**2
 
         if self.dispersionFormulaIdx == 0:
             #Use 0 to indicate constant n
             return self.Nd587
         if self.dispersionFormulaIdx == 1:
             #Schott
-            return np.sqrt( c[0] + (c[1]*(wl**2)) + (c[2]*np.power(wl, -2)) + (c[3]*np.power(wl, -4)) + (c[4]*np.power(wl, -6)) + (c[5]*np.power(wl, -8)) )
+            return np.sqrt( c[0] + (c[1]*wl2) + (c[2]*np.power(wl, -2)) + (c[3]*np.power(wl, -4)) + (c[4]*np.power(wl, -6)) + (c[5]*np.power(wl, -8)) )
         elif self.dispersionFormulaIdx == 2:
             #Sellmeier 1
-            return np.sqrt( 1. + ((c[0]*np.power(wl, 2))/(np.power(wl, 2)-c[1])) + ((c[2]*np.power(wl, 2))/(np.power(wl, 2)-c[3])) + ((c[4]*np.power(wl, 2))/(np.power(wl, 2)-c[5])) )
+            return np.sqrt( 1. + ((c[0]*wl2)/(wl2-c[1])) + ((c[2]*wl2)/(wl2-c[3])) + ((c[4]*wl2)/(wl2-c[5])) )
         elif self.dispersionFormulaIdx == 3:
             #Herzberger
-            L = 1./(np.power(wl, 2) - 0.028)
-            return c[0] + c[1]*L + c[2]*(L**2) + c[3]*(wl**2) + c[4]*np.power(wl, 4) + c[5]*np.power(wl, 6)
+            L = 1./(wl2 - 0.028)
+            return c[0] + c[1]*L + c[2]*(L**2) + c[3]*wl2 + c[4]*np.power(wl, 4) + c[5]*np.power(wl, 6)
         elif self.dispersionFormulaIdx == 4:
             self.logger.error("Sellmeier2 not implemented")
         elif self.dispersionFormulaIdx == 5:
-            self.logger.error("Conrady not implemented")
+            #Conrady
+            return c[0] + c[1]*np.power(wl, -1) + c[2]*np.power(wl, -(7./2.))
         elif self.dispersionFormulaIdx == 6:
-            self.logger.error("Sellmeier3 not implemented")
+            #Sellmeier 3
+            return np.sqrt( 1 + (c[0]*wl2)/(wl2-c[1]) + (c[2]*wl2)/(wl2-c[3]) + (c[4]*wl2)/(wl2-c[5]) + (c[6]*wl2)/(wl2-c[7]) )
         elif self.dispersionFormulaIdx == 7:
-            self.logger.error("HoO1 not implemented")
+            #HoO 1
+            return np.sqrt(c[0] + (c[1]/(wl2-c[2])) - (c[3]*wl2) )
         elif self.dispersionFormulaIdx == 8:
-            self.logger.error("HoO2 not implemented")
+            #HoO 2
+            return np.sqrt( c[0] + (c[1]*wl2)/(wl2 - c[2]) - (c[3]*wl2) )
         elif self.dispersionFormulaIdx == 9:
-            self.logger.error("Sellmeier4 not implemented")
+            #Sellmeier 4
+            return np.sqrt( c[0] + ((c[1]*wl2)/(wl2-c[2])) + ((c[3]*wl2)/(wl2-c[4])))
         elif self.dispersionFormulaIdx == 10:
             self.logger.error("Extended not implemented")
         elif self.dispersionFormulaIdx == 11:
-            self.logger.error("Sellmeier5 not implemented")
+            #Sellmeier 5
+            return np.sqrt( 1 + (c[0]*wl2)/(wl2 - c[1]) + (c[2]*wl2)/(wl2 - c[3]) + (c[4]*wl2)/(wl2 - c[5]) + (c[6]*wl2)/(wl2 - c[7]) + (c[8]*wl2)/(wl2 - c[9]) )
         elif self.dispersionFormulaIdx == 12:
             self.logger.error("Extended2 not implemented")
 
@@ -89,6 +96,9 @@ class Glass(object):
         T = np.array(T, dtype='double')
 
         n0 = self.getNatRefTemp(wl)
+        if n0 is None:
+            self.logger.error("Unable to get n at ref temp")
+            return None
 
         T0 = self.refTemp
         if T0 is None:
